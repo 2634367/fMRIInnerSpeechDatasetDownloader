@@ -1,0 +1,57 @@
+# dsdl configuration — copy to config.yaml and edit.
+#   cp config.example.yaml config.yaml
+
+general:
+  # Where everything goes. Can be an external drive, e.g. "/Volumes/MyDrive/InnerSpeech".
+  # If the drive is not mounted, dsdl refuses to run (it never falls back to the internal disk).
+  output_dir: ~/InnerSpeechData
+  # State (SQLite), sheet cache and logs. Empty = <output_dir>/.dsdl (travels with the drive).
+  state_dir: ""
+  # macOS: keep the machine awake while syncing (runs `caffeinate -i -w <pid>`).
+  prevent_sleep: true
+
+sheet:
+  # Google Sheet ID (must be viewable by "anyone with the link").
+  id: asdf
+  datasets_tab: Datasets
+  code_tab: Code Examples
+  # Also treat links in the Datasets tab's "Code" column as code to download.
+  include_dataset_code_column: true
+
+download:
+  parallel_items: 2         # datasets downloaded at the same time
+  parallel_files: 8         # files downloaded at the same time (shared across items)
+  order: smallest_first     # smallest_first | sheet
+  retries: 8                # per request / per file, with exponential backoff
+  timeout_s: 60
+  verify_checksums: true    # md5/sha256 hashed while streaming, when the source publishes one
+  min_free_space_gb: 50     # keep this much free; items that don't fit are skipped (smallest first)
+  # Item keys to skip / restrict to. Keys are shown by `dsdl plan` and `dsdl status`, e.g.
+  #   hf:datasets/FOMO-MRI/FOMO300K, openneuro:ds005237, github:HuthLab/semantic-decoding
+  exclude: []
+  only: []
+
+openneuro:
+  version: latest           # latest | sheet (pin to the version in the sheet's link)
+  # derivatives/ (mostly fMRIPrep outputs) are ~10 TB of the ~17 TB on OpenNeuro (raw ≈ 6.7 TB).
+  # Changing this re-filters cached listings on the next run; nothing already downloaded is deleted.
+  include_derivatives: true
+
+git:
+  depth: 1                  # 0 = full history
+  lfs: true                 # fetch git-lfs files after cloning
+  parallel: 4               # repos cloned at the same time
+  update_on_rerun: false    # true = fetch upstream changes for already-cloned repos on every run
+
+auth:
+  # All optional. Blank values fall back to the environment variable in brackets.
+  github_token: ""          # [GITHUB_TOKEN]   repo sizes + 5000 API req/h instead of 60
+  hf_token: ""              # [HF_TOKEN]       gated repos (accept terms on the website) + higher rate limits
+  osf_token: ""             # [OSF_TOKEN]      private projects you can access + higher rate limits
+  zenodo_token: ""          # [ZENODO_TOKEN]   higher rate limits
+  figshare_token: ""        # [FIGSHARE_TOKEN] private articles
+
+# Per-item tweaks, keyed by item key.
+overrides: {}
+#  "osf:czb26":
+#    view_only: 0123456789abcdef
